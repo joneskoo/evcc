@@ -1,0 +1,36 @@
+name: Auto-generate dist/
+on: push
+permissions:
+  contents: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+        id: go
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-clean-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-clean-
+            ${{ runner.os }}-go-
+
+      - name: Generate dist/
+        run: make install-ui ui
+
+      - name: Git commit and push
+        run: |
+          git add -f -A dist
+          git config --global user.email "joneskoo@users.noreply.github.com"
+          git config --global user.name "Joonas Kuorilehto (actions bot)"
+          git commit -m 'Generate dist/'
+          git push
